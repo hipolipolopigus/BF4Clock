@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+	BF4 VPN Countdown Timer by Hipolipolopigus
+	Nowhere near optimized, but good enough!
+	Uses parts of CASA Lib (http://casalib.org/) for datetime manipulation
+-->
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   creationComplete="startup(event)">
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		
+		@font-face { 
+			src: url("../assets/puristabold.otf");
+			fontFamily: Purista;
+		}
+	</fx:Style>
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			import org.casalib.util.DateUtil;
+			
+			import spark.filters.GlowFilter;
+			
+			[Embed("../assets/donetheme.mp3")]
+			private var soundClass:Class;
+			private var sound:Sound;
+			private var channel:SoundChannel;
+			private var trans:SoundTransform = new SoundTransform(0, 0);
+			private var canPlay:Boolean = false;
+			private var isOnline:Boolean = false; //Display safety
+			private var startTime:Date = new Date();
+			private var target:Date = 
+				//For skipping
+				//new Date(2013, 10, startTime.date, startTime.hours, startTime.minutes + 1, startTime.seconds + 25);
+				//For the real countdown
+				new Date(1382972416 * 1000);	//Unix timestamp x 1000
+			
+			private function updateClock():void
+			{		
+				var now:Date = new Date();
+				var diff:* = org.casalib.util.DateUtil.getCountdownUntil(now, target);
+				var hours:* = diff.hours;
+				var minutes:* = diff.minutes;
+				var seconds:* = diff.seconds;
+				
+				var totalSeconds:* = (minutes*60) + seconds;
+				
+				if(hours == 0 && totalSeconds <= 78 && totalSeconds >= 77 && !canPlay)
+				{
+					channel = sound.play(0,0,trans);
+					canPlay = true;
+				}
+				
+				if(hours <= 0 && minutes <= 0 && seconds <= 0)
+				{
+					removeEventListener(Event.ENTER_FRAME, onEnterFrame);
+					isOnline = true;
+					clock.text = "BF4 ONLINE";
+				}
+				else
+					clock.text = correct(hours) + ":" + correct(minutes) + ":" + correct(seconds);
+			}
+			
+			private function correct(value:Number):String{
+				var result:String = value.toString();
+				return result.length < 2 ? "0" + result : result;
+			}
+			
+			protected function startup(event:FlexEvent):void
+			{
+				addEventListener(Event.ENTER_FRAME, onEnterFrame);
+				sound = new soundClass() as Sound;
+				var stroke:spark.filters.GlowFilter = new spark.filters.GlowFilter(0xFFAE00, 1, 6, 6, 0.5, 1);
+				clock.filters = [stroke];
+			}
+			
+			private function onEnterFrame(event:Event):void
+			{
+				if(isOnline)
+					clock.text = "BF4 ONLINE";				
+				else 
+				{
+					if(canPlay && trans.volume < 1)
+					{
+						trans.volume += 0.003;
+						channel.soundTransform = trans;
+					}
+					updateClock();
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<!-- 
+		source="http://eaassets-a.akamaihd.net/battlelog/background-videos/bg-video.mp4"
+		I love the rain, but I hate the splotch in the middle ;__;
+	-->
+	<s:VideoDisplay width="100%" height="100%" loop="true" scaleMode="zoom"
+					source="http://virtual-asylum.com/BF4/bf4landing.mp4"/>
+	
+	<s:Label id="clock" color="#FFAE00" fontFamily="Purista" fontSize="64" horizontalCenter="0"
+			 text="06:18:38" textAlign="center" verticalAlign="middle" verticalCenter="0"/>
+	<!-- MINE :P -->
+	<s:Label text="By Hipolipolopigus" color="#FFAE00" fontFamily="Purista" right="2" bottom="2"/>
+</s:Application> 
